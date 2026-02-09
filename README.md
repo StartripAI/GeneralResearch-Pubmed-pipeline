@@ -1,66 +1,45 @@
 # Pubmed-max
 
-**World's best PubMed-centric medical evidence retrieval and audit pipeline** for clinical evidence workbooks.
+**Content-first PubMed-centric medical retrieval and evidence synthesis pipeline.**
 
-Pubmed-max is built for one thing: **never break, always explain, always trace back to source**.
+The product goal is simple: **increase core medical evidence density with full traceability**.
 
-## Why this is different
+## Core data status (2026-02-09)
 
-- Reliability first: source-router with graceful fallback (no hard crash on 429/dirty payloads)
-- Medical-grade auditability: every datum can map back to evidence (`datum_id`, source, location, quote)
-- Decision-ready outputs: clean Excel with dictionary-first layout, consistent schema, and review-friendly formatting
-- Clinical logic: survival / tumor-control / safety-QOL tasks are separated and MECE
+| Task | Core non-empty values | Core possible values | Coverage |
+|---|---:|---:|---:|
+| Task 1 (Survival endpoints) | 64 | 128 | 50.00% |
+| Task 2 (Tumor control endpoints) | 43 | 176 | 24.43% |
+| Task 3 (Safety/QoL endpoints) | 56 | 112 | 50.00% |
 
-## Hard comparison (same query, same limits)
+## Delta vs previous release
 
-Query:
-`pancreatic cancer randomized phase III LAPC MPC overall survival progression-free survival ORR CTCAE quality of life QALY`
+| Metric | Delta |
+|---|---:|
+| Task 1 core non-empty values | 0 |
+| Task 2 core non-empty values | 0 |
+| Task 3 core non-empty values | 0 |
 
-| Source | Legacy MCP rows | Native router rows | Legacy runtime (s) | Native runtime (s) | Legacy error markers | Native error markers |
-|---|---:|---:|---:|---:|---:|---:|
-| Crossref | 11 | 20 | 3.221 | 2.836 | 9 parse-error logs | 0 |
-| Semantic | 0 | 0 | 8.392 | 1.141 | 4 rate-limit logs | 0 |
+This means the latest release improved runtime robustness and publication quality, but **did not increase core data values**.
 
-### Error noise comparison
+## What this repository includes
 
-```mermaid
-pie title Legacy vs Native Error Markers (captured)
-  "Legacy Crossref parse errors" : 9
-  "Legacy Semantic 429 markers" : 4
-  "Native Router errors" : 0
-```
-
-## Readability upgrade: field dictionary order
-
-Before (hard to review):
-`12mPFS/%`, `1yOS/%`, `5yOS/%`, `6mPFS/%`, `AE term`, ...
-
-After (clinical-first):
-`Trial name`, `Modality`, `Category`, `Treatment regimen`, `Population`, `n`, `Study period`, `Follow-up (months)`, `Publication year`, ...
-
-## Deliverables (examples)
-
-- Workbook: `examples/pancreatic_evidence_workbook.xlsx`
-- Access audit: `examples/access_audit_quickcheck.csv`
-- Download manifest: `examples/download_manifest_quickcheck.csv`
-- Full comparison: `reports/COMPARISON_2026-02-09.md`
-- Machine-readable metrics: `reports/comparison_metrics_2026-02-09.json`
-
-## Repository layout
-
-- `src/paper_hub.py` - unified search/router/download/audit pipeline
-- `src/workbook_builder.py` - generic workbook builder with styling and validation
+- `src/paper_hub.py` - unified retrieval, source routing, quality scoring, audit output
+- `src/workbook_builder.py` - workbook generation with review-oriented formatting
 - `src/dimensions_catalog.yaml` - dynamic dimension registry
-- `src/source_registry.yaml` - source/institution reliability registry
-- `reports/` - benchmark and comparison outputs
+- `src/source_registry.yaml` - source reliability and institution registry
+- `reports/CORE_DATA_STATUS_2026-02-09.md` - content-first KPI snapshot
+- `reports/COMPARISON_2026-02-09.md` - engine/path comparison
+- `examples/` - workbook and audit examples
 
 ## Product principles
 
-1. **No silent failure**: if data is missing, it is explicitly audited.
-2. **No black-box extraction**: evidence table always keeps traceability fields.
-3. **No quality downgrade**: quality guard blocks regressions in core evidence.
-4. **No illegal bypass**: only legal/public access channels are used.
+1. Content metrics are primary KPIs.
+2. Every value must be traceable to evidence.
+3. Quality gate should never be lowered for easier fill rates.
+4. Reliability improvements are necessary, but not counted as core content progress.
 
-## Positioning
+## Current focus
 
-Pubmed-max is designed as the **most reliable and explainable PubMed-first medical retrieval engine** for real clinical evidence synthesis workflows.
+- Increase Task 2 and Task 3 core coverage with high-grade evidence.
+- Keep evidence mapping and auditability at 100%.
