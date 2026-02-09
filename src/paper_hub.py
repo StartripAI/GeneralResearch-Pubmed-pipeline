@@ -1290,10 +1290,10 @@ def _relevance_score(record: Dict[str, Any], strategy: str) -> float:
 
     score = 0.0
 
-    if "pancreatic" in text:
-        score += 2.0
     if "cancer" in text or "adenocarcinoma" in text:
         score += 1.2
+    if any(k in text for k in ("disease", "syndrome", "failure", "diabetes", "stroke")):
+        score += 0.8
     if "random" in text:
         score += 1.2
     if "phase iii" in text or "phase 3" in text:
@@ -1311,9 +1311,9 @@ def _relevance_score(record: Dict[str, Any], strategy: str) -> float:
         score += 0.2
 
     if strategy == "precision":
-        if "pancreatic" not in text:
-            score -= 3.0
-        if "random" not in text:
+        if not any(bool(flags.get(k)) for k in ("os", "pfs", "orr", "ae", "qol", "qaly")):
+            score -= 2.0
+        if not any(k in text for k in ("random", "phase iii", "phase 3", "multicenter", "cohort", "trial")):
             score -= 1.5
     elif strategy == "recall":
         score += 0.2
@@ -4072,20 +4072,20 @@ print(json.dumps(data, ensure_ascii=False, default=str))
 
 def cmd_benchmark(args: argparse.Namespace) -> None:
     queries = [
-        "pancreatic cancer randomized phase III overall survival progression-free survival",
-        "pancreatic cancer ORR DCR objective response randomized trial",
-        "pancreatic cancer CTCAE grade 3 adverse events randomized",
-        "pancreatic cancer quality of life EQ-5D QLQ-C30 trial",
-        "locally advanced pancreatic cancer chemoradiotherapy randomized",
-        "metastatic pancreatic cancer FOLFIRINOX gemcitabine phase III",
-        "pancreatic cancer treatment-related death safety profile trial",
-        "pancreatic cancer QALY cost-effectiveness randomized",
+        "non-small cell lung cancer randomized phase III overall survival progression-free survival",
+        "breast cancer trastuzumab randomized trial overall survival adverse events quality of life",
+        "colorectal cancer bevacizumab randomized phase III ORR PFS OS",
+        "hepatocellular carcinoma immunotherapy grade 3 adverse events quality of life",
+        "type 2 diabetes randomized trial HbA1c severe adverse events quality-adjusted life years",
+        "heart failure randomized trial all-cause mortality hospitalization quality of life",
+        "ischemic stroke thrombectomy randomized trial mRS mortality symptomatic intracranial hemorrhage",
+        "rheumatoid arthritis biologic randomized trial ACR50 serious adverse events",
     ]
 
     out_dir = Path(args.output_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     raw_rows: List[Dict[str, Any]] = []
 
     for q in queries:
