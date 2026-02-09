@@ -297,11 +297,11 @@ SOURCE_REGISTRY_DEFAULT: List[Dict[str, Any]] = [
     {"source_id": "karolinska", "source_type": "institution", "tier": "A", "country": "SE", "institution_tier": "top", "reliability_rule": "top_university_hospital", "alias_keywords": ["karolinska"]},
     {"source_id": "uclh", "source_type": "institution", "tier": "A", "country": "UK", "institution_tier": "top", "reliability_rule": "top_university_hospital", "alias_keywords": ["uclh", "university college london hospitals"]},
     {"source_id": "gustave_roussy", "source_type": "institution", "tier": "A", "country": "FR", "institution_tier": "top", "reliability_rule": "top_cancer_center", "alias_keywords": ["gustave roussy"]},
-    {"source_id": "pumch", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_national_center", "alias_keywords": ["协和", "peking union medical college hospital", "pumch"]},
-    {"source_id": "west_china", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_national_center", "alias_keywords": ["华西", "west china hospital"]},
-    {"source_id": "sjtu", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_academic_center", "alias_keywords": ["上海交通大学", "shanghai jiao tong"]},
-    {"source_id": "fudan", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_academic_center", "alias_keywords": ["复旦", "fudan"]},
-    {"source_id": "sun_yat_sen", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_academic_center", "alias_keywords": ["中山", "sun yat-sen", "sysu"]},
+    {"source_id": "pumch", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_national_center", "alias_keywords": ["peking union medical college hospital", "pumch"]},
+    {"source_id": "west_china", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_national_center", "alias_keywords": ["west china hospital"]},
+    {"source_id": "sjtu", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_academic_center", "alias_keywords": ["shanghai jiao tong"]},
+    {"source_id": "fudan", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_academic_center", "alias_keywords": ["fudan"]},
+    {"source_id": "sun_yat_sen", "source_type": "institution", "tier": "A", "country": "CN", "institution_tier": "top", "reliability_rule": "top_academic_center", "alias_keywords": ["sun yat-sen", "sysu"]},
 ]
 
 SOURCE_CRED_BASE = {

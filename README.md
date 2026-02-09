@@ -33,10 +33,10 @@ pie title Legacy vs Native Error Markers (captured)
 ## Readability upgrade: field dictionary order
 
 Before (hard to review):
-`12mPFS/%`, `1yOS/%`, `5yOS/%`, `6mPFS/%`, `AE术语`, ...
+`12mPFS/%`, `1yOS/%`, `5yOS/%`, `6mPFS/%`, `AE term`, ...
 
 After (clinical-first):
-`临床试验`, `方式`, `类别`, `治疗方案`, `研究人群`, `n`, `研究时间`, `随访时间/月`, `发表时间`, ...
+`Trial name`, `Modality`, `Category`, `Treatment regimen`, `Population`, `n`, `Study period`, `Follow-up (months)`, `Publication year`, ...
 
 ## Deliverables (examples)
 
@@ -48,11 +48,11 @@ After (clinical-first):
 
 ## Repository layout
 
-- `src/paper_hub.py` — unified search/router/download/audit pipeline
-- `src/build_pancreatic_workbook.py` — workbook builder with styling and validation
-- `src/dimensions_catalog.yaml` — dynamic dimension registry
-- `src/source_registry.yaml` — source/institution reliability registry
-- `reports/` — benchmark and comparison outputs
+- `src/paper_hub.py` - unified search/router/download/audit pipeline
+- `src/workbook_builder.py` - generic workbook builder with styling and validation
+- `src/dimensions_catalog.yaml` - dynamic dimension registry
+- `src/source_registry.yaml` - source/institution reliability registry
+- `reports/` - benchmark and comparison outputs
 
 ## Product principles
 

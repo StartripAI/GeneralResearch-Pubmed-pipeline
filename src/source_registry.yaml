@@ -200,7 +200,6 @@ sources:
   institution_tier: top
   reliability_rule: top_national_center
   alias_keywords:
-  - 协和
   - peking union medical college hospital
   - pumch
 - source_id: west_china
@@ -210,7 +209,6 @@ sources:
   institution_tier: top
   reliability_rule: top_national_center
   alias_keywords:
-  - 华西
   - west china hospital
 - source_id: sjtu
   source_type: institution
@@ -219,7 +217,6 @@ sources:
   institution_tier: top
   reliability_rule: top_academic_center
   alias_keywords:
-  - 上海交通大学
   - shanghai jiao tong
 - source_id: fudan
   source_type: institution
@@ -228,7 +225,6 @@ sources:
   institution_tier: top
   reliability_rule: top_academic_center
   alias_keywords:
-  - 复旦
   - fudan
 - source_id: sun_yat_sen
   source_type: institution
@@ -237,6 +233,5 @@ sources:
   institution_tier: top
   reliability_rule: top_academic_center
   alias_keywords:
-  - 中山
   - sun yat-sen
   - sysu
