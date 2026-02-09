@@ -628,6 +628,131 @@ def _apply_pubmed_date_filter(query: str, date_from: str | None, date_to: str | 
     return f"({query}) AND (\"{start}\"[Date - Publication] : \"{end}\"[Date - Publication])"
 
 
+def _pubmed_article_date(article: ET.Element) -> str:
+    for path in (
+        ".//Article/ArticleDate/Year",
+        ".//Journal/JournalIssue/PubDate/Year",
+        ".//PubDate/Year",
+    ):
+        value = _clean_text(article.findtext(path, ""))
+        if re.fullmatch(r"\d{4}", value):
+            return value
+    medline_date = _clean_text(
+        article.findtext(".//Journal/JournalIssue/PubDate/MedlineDate", "")
+        or article.findtext(".//PubDate/MedlineDate", "")
+    )
+    year = _first_year(medline_date)
+    return str(year) if year else ""
+
+
+def _pubmed_article_abstract(article: ET.Element) -> str:
+    chunks: List[str] = []
+    for node in article.findall(".//Abstract/AbstractText"):
+        text = _clean_text(" ".join(node.itertext()))
+        if not text:
+            continue
+        label = _clean_text(node.attrib.get("Label", ""))
+        if label:
+            chunks.append(f"{label}: {text}")
+        else:
+            chunks.append(text)
+    return _clean_text(" ".join(chunks))
+
+
+def _search_pubmed_eutils_native(
+    query: str,
+    max_results: int,
+    retstart: int = 0,
+    retries: int = 2,
+) -> List[Dict[str, Any]]:
+    params = {
+        "db": "pubmed",
+        "term": query,
+        "retmode": "json",
+        "retmax": max(1, max_results),
+        "retstart": max(0, retstart),
+        "sort": "relevance",
+    }
+    esearch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+    efetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+
+    last_err: Exception | None = None
+    ids: List[str] = []
+    for i in range(max(1, retries + 1)):
+        try:
+            data = _http_get_json(f"{esearch_url}?{urlencode(params)}", timeout=35)
+            idlist = data.get("esearchresult", {}).get("idlist", []) if isinstance(data, dict) else []
+            ids = [str(x).strip() for x in idlist if str(x).strip()]
+            break
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+            if i < retries:
+                time.sleep(1.2 * (2 ** i))
+    if not ids:
+        if last_err:
+            raise RuntimeError(f"pubmed_esearch_failed: {last_err}") from last_err
+        return []
+
+    fetch_params = {
+        "db": "pubmed",
+        "id": ",".join(ids),
+        "retmode": "xml",
+    }
+    xml_bytes = _http_get(f"{efetch_url}?{urlencode(fetch_params)}", timeout=45)
+    root = ET.fromstring(xml_bytes)
+
+    out: List[Dict[str, Any]] = []
+    for article in root.findall(".//PubmedArticle"):
+        pmid = _clean_text(article.findtext(".//MedlineCitation/PMID", "") or article.findtext(".//PMID", ""))
+        title_node = article.find(".//ArticleTitle")
+        title = _clean_text(" ".join(title_node.itertext())) if title_node is not None else ""
+        if not title:
+            continue
+
+        journal = _clean_text(
+            article.findtext(".//Journal/Title", "")
+            or article.findtext(".//MedlineJournalInfo/MedlineTA", "")
+        )
+        abstract = _pubmed_article_abstract(article)
+
+        doi = ""
+        for aid in article.findall(".//ArticleIdList/ArticleId"):
+            if _clean_text(aid.attrib.get("IdType", "")).lower() == "doi":
+                doi = _normalize_doi(_clean_text(" ".join(aid.itertext())))
+                if doi:
+                    break
+        if not doi:
+            eloc = article.find('.//ELocationID[@EIdType="doi"]')
+            if eloc is not None:
+                doi = _normalize_doi(_clean_text(" ".join(eloc.itertext())))
+
+        authors: List[str] = []
+        for author in article.findall(".//AuthorList/Author"):
+            collective = _clean_text(author.findtext("CollectiveName", ""))
+            if collective:
+                authors.append(collective)
+                continue
+            last = _clean_text(author.findtext("LastName", ""))
+            initials = _clean_text(author.findtext("Initials", ""))
+            if last and initials:
+                authors.append(f"{last} {initials}")
+            elif last:
+                authors.append(last)
+
+        out.append(
+            {
+                "title": title,
+                "authors": authors,
+                "date": _pubmed_article_date(article),
+                "abstract": abstract,
+                "journal": journal,
+                "doi": doi,
+                "pubmed_id": pmid,
+            }
+        )
+    return out
+
+
 def _search_pubmed_adapter(
     query: str,
     max_results: int,
@@ -678,12 +803,35 @@ except Exception as e:
         retries=retries,
         timeout=120,
     )
-    data = _extract_json_or_die(result, "search(pubmed-adapter)")
-    if isinstance(data, dict) and data.get("_error"):
-        _die("search(pubmed-adapter) error", data["_error"])
-    if not isinstance(data, list):
+    parsed, parse_err = _extract_json_safe(result)
+    adapter_error = ""
+    if isinstance(parsed, list):
+        return parsed
+    if isinstance(parsed, dict) and parsed.get("_error"):
+        adapter_error = str(parsed.get("_error", ""))
+    elif parse_err:
+        adapter_error = parse_err
+
+    try:
+        return _search_pubmed_eutils_native(
+            query=filtered_query,
+            max_results=max_results,
+            retstart=retstart,
+            retries=retries,
+        )
+    except Exception as e:  # noqa: BLE001
+        if adapter_error:
+            print(
+                f"warning: pubmed adapter and fallback failed; returning empty set. "
+                f"adapter_error={adapter_error}; fallback_error={e}",
+                file=sys.stderr,
+            )
+            return []
+        print(
+            f"warning: pubmed fallback failed; returning empty set. fallback_error={e}",
+            file=sys.stderr,
+        )
         return []
-    return data
 
 
 def _search_mcp_source(
@@ -1290,10 +1438,10 @@ def _relevance_score(record: Dict[str, Any], strategy: str) -> float:
 
     score = 0.0
 
+    if "pancreatic" in text:
+        score += 2.0
     if "cancer" in text or "adenocarcinoma" in text:
         score += 1.2
-    if any(k in text for k in ("disease", "syndrome", "failure", "diabetes", "stroke")):
-        score += 0.8
     if "random" in text:
         score += 1.2
     if "phase iii" in text or "phase 3" in text:
@@ -1311,9 +1459,9 @@ def _relevance_score(record: Dict[str, Any], strategy: str) -> float:
         score += 0.2
 
     if strategy == "precision":
-        if not any(bool(flags.get(k)) for k in ("os", "pfs", "orr", "ae", "qol", "qaly")):
-            score -= 2.0
-        if not any(k in text for k in ("random", "phase iii", "phase 3", "multicenter", "cohort", "trial")):
+        if "pancreatic" not in text:
+            score -= 3.0
+        if "random" not in text:
             score -= 1.5
     elif strategy == "recall":
         score += 0.2
@@ -4032,6 +4180,9 @@ def cmd_parse(args: argparse.Namespace) -> None:
         code = r'''
 import json
 import sys
+import gzip
+import os
+import tempfile
 
 import pubmed_parser as pp
 
@@ -4043,7 +4194,20 @@ if mode == "oa":
 elif mode == "refs":
     data = pp.parse_pubmed_references(path)
 elif mode == "medline":
-    data = list(pp.parse_medline_xml(path))
+    try:
+        data = list(pp.parse_medline_xml(path))
+    except Exception:
+        with open(path, "rb") as src, tempfile.NamedTemporaryFile(suffix=".xml.gz", delete=False) as tmp:
+            with gzip.GzipFile(fileobj=tmp, mode="wb") as gz:
+                gz.write(src.read())
+            tmp_path = tmp.name
+        try:
+            data = list(pp.parse_medline_xml(tmp_path))
+        finally:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
 else:
     raise ValueError(f"Unsupported mode: {mode}")
 
@@ -4072,20 +4236,20 @@ print(json.dumps(data, ensure_ascii=False, default=str))
 
 def cmd_benchmark(args: argparse.Namespace) -> None:
     queries = [
-        "non-small cell lung cancer randomized phase III overall survival progression-free survival",
-        "breast cancer trastuzumab randomized trial overall survival adverse events quality of life",
-        "colorectal cancer bevacizumab randomized phase III ORR PFS OS",
-        "hepatocellular carcinoma immunotherapy grade 3 adverse events quality of life",
-        "type 2 diabetes randomized trial HbA1c severe adverse events quality-adjusted life years",
-        "heart failure randomized trial all-cause mortality hospitalization quality of life",
-        "ischemic stroke thrombectomy randomized trial mRS mortality symptomatic intracranial hemorrhage",
-        "rheumatoid arthritis biologic randomized trial ACR50 serious adverse events",
+        "pancreatic cancer randomized phase III overall survival progression-free survival",
+        "pancreatic cancer ORR DCR objective response randomized trial",
+        "pancreatic cancer CTCAE grade 3 adverse events randomized",
+        "pancreatic cancer quality of life EQ-5D QLQ-C30 trial",
+        "locally advanced pancreatic cancer chemoradiotherapy randomized",
+        "metastatic pancreatic cancer FOLFIRINOX gemcitabine phase III",
+        "pancreatic cancer treatment-related death safety profile trial",
+        "pancreatic cancer QALY cost-effectiveness randomized",
     ]
 
     out_dir = Path(args.output_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     raw_rows: List[Dict[str, Any]] = []
 
     for q in queries:
