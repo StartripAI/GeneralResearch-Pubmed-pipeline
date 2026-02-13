@@ -1,10 +1,35 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.DS_Store
-.env
 .venv/
 venv/
+
+# OS / local
+.DS_Store
+.env
+
+# Runtime outputs
 downloads/
+reports/
 *.log
+
+# Assignment / paper artifacts (do not upload)
+*.pdf
+*.xlsx
+*.docx
+*.ppt
+*.pptx
+
+# Local agent/cache
+.codex_mem/
+.claude/
+
+# Embedded third-party repos (managed separately)
+paper-search-mcp/
+paperscraper/
+pubmed_parser/
+
+# Task-local tools not intended for public repo
+tools/update_panova_faq_docx.py
