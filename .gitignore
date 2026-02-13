@@ -13,6 +13,7 @@ venv/
 # Runtime outputs
 downloads/
 reports/
+examples/
 *.log
 
 # Assignment / paper artifacts (do not upload)

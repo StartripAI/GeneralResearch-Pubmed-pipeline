@@ -119,5 +119,5 @@ Each missing entry must include target locator and attempted chain.
 - Runtime mode baseline: `max-reach`.
 - GROBID baseline: remote mirror first, local fallback.
 - Key files:
-  - `/Users/alfred/Desktop/paper/grobid_client.py`
-  - `/Users/alfred/Desktop/paper/paper_hub.py`
+  - `src/paper_hub.py`
+  - `src/source_registry.yaml`
