@@ -1,4 +1,4 @@
-# Pubmed-max
+# General Research + PubMed Pipeline
 
 A general, multi-source evidence pipeline for:
 **retrieval -> fulltext acquisition -> structured parsing -> field extraction -> evidence-backed delivery**.
